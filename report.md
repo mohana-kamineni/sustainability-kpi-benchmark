@@ -84,7 +84,7 @@ All reports represent FY2025 reporting periods published in spring 2026 under Eu
 
 ## 6. Empirical Results & Performance Comparison
 
-Following a comprehensive benchmark self-audit, the evidence checker was updated to evaluate a $\pm 1$ page window and handle folio-to-index offsets (e.g. $+1$ in Boliden and Alleima). Below are the empirical evaluation metrics across all 5 extraction configurations on the frozen test set ($N=32$ company-KPI observations).
+Following a comprehensive benchmark self-audit, the evidence checker was updated to evaluate a ±1 page window and handle folio-to-index offsets (e.g. $+1$ in Boliden and Alleima). Below are the empirical evaluation metrics across all 5 extraction configurations on the frozen test set ($N=32$ company-KPI observations).
 
 Both the original evaluation run (with initial Groq rate-limit technical failures) and the recovered run (re-running failed calls with `max_tokens=4096` and backoff) are reported below:
 
@@ -99,7 +99,7 @@ Both the original evaluation run (with initial Groq rate-limit technical failure
 | **Method C: RAG (`gpt-oss-20b`)** | 32 | 20 | 10 (31.2%) | **50.0%** (16/32) [33.6%, 66.4%] | 53.1% (17/32) [36.4%, 69.1%] | 62.5% (20/32) [45.3%, 77.1%] | 5.0% (1/20) [0.9%, 23.6%] | $0.0090 | $0.0006 | 16.4 s |
 | **Method C: RAG (`gpt-oss-120b`)** | 32 | 24 | 5 (15.6%) | **68.8%** (22/32) [51.4%, 82.1%] | 71.9% (23/32) [54.6%, 84.4%] | 75.0% (24/32) [57.9%, 86.8%] | **0.0%** (0/24) [0.0%, 13.8%] | $0.0212 | $0.0010 | 19.6 s |
 
-*\*Methodological Caveat on Method B: Method B was provided pre-sliced 3-page windows (`gold-1` to `gold+1`). Because the adjusted evidence checker accepts citations in a $\pm 1$ page window, almost any citation within the provided slice is accepted. Method B's 100% page accuracy and low unsupported rate reflect this pre-slicing window rather than autonomous document navigation.*
+*\*Methodological Caveat on Method B: Method B was provided pre-sliced 3-page windows (`gold-1` to `gold+1`). Because the adjusted evidence checker accepts citations in a ±1 page window, almost any citation within the provided slice is accepted. Method B's 100% page accuracy and low unsupported rate reflect this pre-slicing window rather than autonomous document navigation.*
 
 ### Table 2: Recovered Run (Targeted Re-Run of Failures with `max_tokens=4096`)
 *Original run plus targeted re-run of failed calls with `max_tokens=4096` (9 calls recovered: 4 for 120B, 5 for 20B; remaining 6 calls for 20B and 2 for 120B pending quota reset):*
@@ -114,13 +114,13 @@ Both the original evaluation run (with initial Groq rate-limit technical failure
 
 ### Paired Bootstrap Resampling Analysis (1,000 Iterations, Seed 42)
 - **Direct 120B vs. Rule-Based Baseline:**
-  $\Delta\text{Accuracy} = +53.1\%$ [95% CI: $+37.5\%$, $+71.9\%$].
+  ΔAccuracy = +53.1 pp [95% CI: +37.5 to +71.9 pp].
   *Finding:* Direct LLM extraction decisively outperforms rule-based extraction across industrial reports with non-overlapping confidence intervals.
 - **RAG 120B vs. Direct 120B (Recovered Run):**
-  $\Delta\text{Accuracy} = 0.0\%$ [95% CI: $-15.6\%$, $+15.6\%$].
-  *Finding:* Both Direct Prompting (81.2%) and RAG (81.2%) achieved 26/32 correct value extractions. The accuracy difference is **0.0% and completely within sampling noise** (CI spans zero). Direct prompting achieved slightly higher coverage (96.9% vs 87.5%) without retrieval misses, while RAG operated autonomously over the full 761-page report corpus. Note that unsupported-value rates and page accuracy are not cross-method comparable due to Method B's 3-page pre-sliced input windows and the $\pm 1$ checker tolerance.
+  ΔAccuracy = 0.0 pp [95% CI: −15.6 to +15.6 pp].
+  *Finding:* Both Direct Prompting (81.2%) and RAG (81.2%) achieved 26/32 correct value extractions. The accuracy difference is **0.0% and completely within sampling noise** (CI spans zero). Direct prompting achieved slightly higher coverage (96.9% vs 87.5%) without retrieval misses, while RAG operated autonomously over the full 761-page report corpus. Note that unsupported-value rates and page accuracy are not cross-method comparable due to Method B's 3-page pre-sliced input windows and the ±1 checker tolerance.
 - **Model Scaling under RAG (120B vs. 20B Recovered):**
-  $\Delta\text{Accuracy} = +15.6\%$ [95% CI: $0.0\%$, $+31.2\%$].
+  ΔAccuracy = +15.6 pp [95% CI: 0.0 to +31.2 pp].
   *Finding:* The 120B model demonstrated higher parsing reliability on retrieved text, though the lower bound touches zero, indicating that a larger corporate corpus is required for definitive scaling claims.
 
 ---
@@ -169,12 +169,13 @@ All evaluation runs write their results to `results/evaluation_results.json`.
 1. **Sample Size ($N=32$):** Four major corporations and eight standard KPIs provide 32 distinct observations. While effective for initial method validation, confidence intervals span 15–20 percentage points.
 2. **Error Taxonomy Identified in Audit:**
    Among the examined Direct-120B errors, values were grounded in the report text rather than arbitrarily fabricated. The largest single category was base-year vs. reporting-year confusion (accounting for half of Direct-120B's 6 errors), followed by metric-definition mismatches:
-   - **Base-Year vs. Reporting-Year Confusion (Largest Category, ~50% of Direct-120B errors):** Multi-year comparative tables in ESRS disclosures frequently confuse LLMs without temporal anchoring (e.g. Boliden Scope 1 extracted as 2021 baseline `649,087` instead of 2025 `685,577`; Boliden Scope 2 extracted as 2021 baseline `824,756` instead of 2025 `1,853,894`; Epiroc Scope 2 extracted as 2019 baseline `56` instead of 2025 `23`; Epiroc Scope 1 extracted as 2019 baseline `41` instead of 2025 `32`).
-   - **Metric-Definition and Scope Mismatches:** Extraction of related but narrower energy scopes, such as extracting renewable electricity share instead of total renewable energy share (e.g. Epiroc extracted as `55%` [electricity only] instead of `36%` [total energy mix], Alleima extracted as `98%` [purchased fossil-free electricity] instead of total renewable share).
-   - **Metric Sub-Type Mix-ups:** Extraction of related sub-metrics rather than the target KPI (e.g. Sandvik LTIFR `0.9` instead of TRIFR `2.3`).
+   - **Base-Year vs. Reporting-Year Confusion (Largest Category, 50% of Direct-120B errors):** Multi-year comparative tables in ESRS disclosures frequently confuse LLMs without temporal anchoring: Boliden Scope 1 extracted as 2021 baseline `649,087` instead of 2025 `685,577` (Direct-120B); Boliden Scope 2 extracted as 2021 baseline `824,756` instead of 2025 `1,853,894` (Direct-120B); Epiroc Scope 1 extracted as 2019 baseline `41` instead of 2025 `32` (Direct-120B); Epiroc Scope 2 extracted as 2019 baseline `56` instead of 2025 `23` (RAG-120B).
+   - **Metric-Definition and Scope Mismatches:** Extraction of related but narrower energy scopes: Epiroc renewable electricity share extracted as `55%` instead of total renewable energy mix `36%` (Direct-120B); Alleima purchased fossil-free electricity extracted as `98%` instead of total renewable share (Direct-120B, Direct-20B).
+   - **Metric Sub-Type Mix-ups:** Extraction of related sub-metrics rather than the target KPI: Sandvik safety extracted as LTIFR `0.9` instead of TRIFR `2.3` (RAG-120B).
+   - **Abstained on a Disclosed Value:** Model returned `null` despite explicit disclosure in the report text: Sandvik renewable share returned `null` despite `14.9%` being printed on page 71 (Direct-120B, RAG-120B).
    - **Derived vs. Disclosed Values:** Alleima reports renewable energy in MWh (`180,224` MWh of `1,016,096` MWh) but does not print a percentage share. Direct extraction models properly abstained (`null`) rather than calculating unprinted percentages. On disclosed non-financial KPIs ($N=31$), Direct 120B and RAG 120B achieve identical value accuracy: 26/31 (83.9%).
    - **Coarseness of Target Labels:** All four peers are labelled with net-zero target year `2050` and SBTi status `validated` as categorical KPIs, but these are not strictly like-for-like: Boliden's 2050 target covers Scope 1–2 only under ICMM (with near-term 2030 targets SBTi-validated, while long-term net-zero is not yet validated under SBTi Corporate Net-Zero Standard), whereas Sandvik's target is a corporate commitment validated in 2023, and Epiroc and Alleima maintain verified full value-chain targets.
-3. **Non-Comparability of Unsupported-Value and Page Metrics:** Method B received pre-sliced 3-page windows (`gold-1` to `gold+1`), and the evidence checker accepts a $\pm 1$ page window. Method B's 100% page accuracy and low unsupported rate reflect this pre-slicing window rather than autonomous document navigation, and cannot be compared directly with Method C's whole-document retrieval.
+3. **Non-Comparability of Unsupported-Value and Page Metrics:** Method B received pre-sliced 3-page windows (`gold-1` to `gold+1`), and the evidence checker accepts a ±1 page window. Method B's 100% page accuracy and low unsupported rate reflect this pre-slicing window rather than autonomous document navigation, and cannot be compared directly with Method C's whole-document retrieval.
 4. **API Token Limits on Open-Weight Reasoning Models:** Models like `gpt-oss-120b` produce 150–860 reasoning tokens before generating JSON output. Running sequential calls with large context windows can exhaust daily token limits on developer tiers.
 
 ---

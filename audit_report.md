@@ -88,11 +88,11 @@ All four companies are labelled in the gold set with net-zero target year `2050`
 
 ## 2. Method B Caveat: Why Page Accuracy and Unsupported Rates Must Be Qualified
 
-In the original benchmark, Method B (Direct LLM) was reported with 84% unsupported rate due to a 1-page folio offset. The evidence checker was subsequently adjusted post-hoc to accept a $\pm 1$ page window and account for folio-to-index offsets.
+In the original benchmark, Method B (Direct LLM) was reported with 84% unsupported rate due to a 1-page folio offset. The evidence checker was subsequently adjusted post-hoc to accept a ±1 page window and account for folio-to-index offsets.
 
 > [!WARNING]
 > **Essential Methodological Caveat on Method B:**
-> Method B was handed pre-sliced 3-page windows (`gold_page - 1` to `gold_page + 1`). Because the adjusted evidence checker inspects a $\pm 1$ page window around the cited page, almost any citation within the provided slice is accepted. Therefore, Method B's **100% page accuracy** and **3.1%–6.5% unsupported rate** should **NOT** be interpreted as superior document navigation or grounding. They are artifacts of local context pre-slicing. In contrast, Method C (RAG) retrieved pages autonomously across the entire 761-page corpus without chapter hints.
+> Method B was handed pre-sliced 3-page windows (`gold_page - 1` to `gold_page + 1`). Because the adjusted evidence checker inspects a ±1 page window around the cited page, almost any citation within the provided slice is accepted. Therefore, Method B's **100% page accuracy** and **3.1%–6.5% unsupported rate** should **NOT** be interpreted as superior document navigation or grounding. They are artifacts of local context pre-slicing. In contrast, Method C (RAG) retrieved pages autonomously across the entire 761-page corpus without chapter hints.
 
 ---
 
@@ -116,15 +116,18 @@ On disclosed non-financial KPIs ($N=31$), **Direct 120B and RAG 120B achieve ide
 
 Analyzing the examined Direct-120B and RAG-120B errors confirms that values were grounded in the report text rather than arbitrarily fabricated. The largest single category of error was base-year vs. reporting-year confusion (accounting for half of Direct-120B's 6 errors), followed by metric-definition mismatches:
 
-1. **Base-Year vs. Reporting-Year Confusion (Largest Category, ~50% of Direct-120B errors):**
-   - *Occurrence:* Method B Direct extracted Boliden Scope 1 as `649,087` (2021 base year) instead of `685,577` (2025), and Scope 2 as `824,756` (2021 base year) instead of `1,853,894` (2025). Similarly, Method C RAG extracted Epiroc Scope 2 as `56` (2019 base year market-based Scope 2) instead of `23` (2025 reporting year), and Method B extracted Epiroc Scope 1 as `41` (2019 base year) instead of `32` (2025).
+1. **Base-Year vs. Reporting-Year Confusion (Largest Category, 50% of Direct-120B errors):**
+   - *Occurrence:* Boliden Scope 1 extracted as 2021 base year `649,087` instead of 2025 `685,577` (Direct-120B); Boliden Scope 2 extracted as 2021 base year `824,756` instead of 2025 `1,853,894` (Direct-120B); Epiroc Scope 1 extracted as 2019 base year `41` instead of 2025 `32` (Direct-120B); Epiroc Scope 2 extracted as 2019 base year `56` instead of 2025 `23` (RAG-120B).
    - *Significance:* Multi-year comparative tables in ESRS disclosures frequently confuse LLMs if prompts do not enforce column-specific temporal anchoring.
 2. **Metric-Definition and Scope Mismatches:**
-   - *Occurrence:* Extraction of related but narrower energy scopes, such as extracting renewable electricity share instead of total renewable energy share (e.g. Epiroc extracted as `55%` [electricity only] instead of `36%` [total energy mix], Alleima extracted as `98%` [purchased fossil-free electricity] instead of total renewable share).
+   - *Occurrence:* Extraction of related but narrower energy scopes: Epiroc renewable electricity share extracted as `55%` instead of total renewable energy share `36%` (Direct-120B); Alleima purchased fossil-free electricity extracted as `98%` instead of total renewable share (Direct-120B, Direct-20B).
    - *Significance:* Highlights the sensitivity of non-financial KPIs to subtle differences in denominator definitions (electricity vs total energy).
 3. **Metric Sub-Type Mix-ups:**
-   - *Occurrence:* Method C RAG extracted Sandvik safety as `0.9` (LTIFR) instead of `2.3` (TRIFR).
+   - *Occurrence:* Sandvik safety extracted as LTIFR `0.9` instead of TRIFR `2.3` (RAG-120B).
    - *Significance:* Both metrics appear in adjacent columns within ESRS S1 health and safety tables; models can confuse injury severity definitions without explicit metric schemas.
+4. **Abstained on a Disclosed Value:**
+   - *Occurrence:* Sandvik renewable energy share returned `null` despite `14.9%` being printed in the report text on page 71 (Direct-120B, RAG-120B).
+   - *Significance:* Represents an extraction omission on a disclosed non-financial metric.
 4. **API Token Headroom & Rate Limits:**
    - *Occurrence:* Groq developer tier hit 200k daily token limits, causing empty responses on late-sequence calls. Models generating 150–860 reasoning tokens exhausted headroom when context windows were large.
 
@@ -159,8 +162,8 @@ Analyzing the examined Direct-120B and RAG-120B errors confirms that values were
 | **Method C: RAG (`gpt-oss-120b`)** | 32 | 28 | 1 (3.1%) | **81.2%** (26/32) [64.7%, 91.1%] | 84.4% (27/32) | 87.5% (28/32) | **0.0%** (0/28) | $0.0243 | $0.0009 |
 
 - **Paired Bootstrap Resampling ($B=1,000$, seed 42):**
-  - Direct 120B vs. Rule-Based: $\Delta = +53.1\%$ (95% CI: $[+37.5\%, +71.9\%]$). Statistically significant.
-  - Direct 120B vs. RAG 120B (Recovered): Both achieve **26/32 (81.25%)** ($\Delta = 0.0\%$, 95% CI: $[-15.6\%, +15.6\%]$). Differences between Direct and RAG value accuracy are completely within sampling noise.
+  - Direct 120B vs. Rule-Based: Δ = +53.1 pp (95% CI: +37.5 to +71.9 pp). Statistically significant.
+  - Direct 120B vs. RAG 120B (Recovered): Both achieve **26/32 (81.25%)** (Δ = 0.0 pp, 95% CI: −15.6 to +15.6 pp). Differences between Direct and RAG value accuracy are completely within sampling noise.
 
 ---
 
