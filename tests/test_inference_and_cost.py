@@ -3,6 +3,7 @@ Unit tests for inference, cost accounting, and evaluation metrics.
 """
 
 import math
+import pytest
 from src.inference import compute_token_cost, MockInferenceRunner, RATES
 from src.evaluation import wilson_score_ci, run_paired_bootstrap_comparison, evaluate_predictions
 
@@ -50,3 +51,24 @@ def test_run_paired_bootstrap_comparison():
     res = run_paired_bootstrap_comparison(a, b, n_iterations=500, seed=42)
     assert math.isclose(res["delta_mean"], 0.2, abs_tol=0.05)
     assert res["ci_95"][0] >= 0.0  # CI should be >= 0 because B is always >= A
+
+
+def test_live_mode_fails_clearly_without_api_key(monkeypatch):
+    """Verify that live mode without GROQ_API_KEY raises a clear error and does not silently fall back to mock."""
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.setattr("sys.platform", "linux")
+
+    from run_benchmark_evaluation import run_benchmark
+    with pytest.raises(RuntimeError, match="Live Groq API client initialization failed"):
+        run_benchmark(is_mock=False, specific_models=["openai/gpt-oss-20b"])
+
+
+def test_explicit_mock_mode_succeeds_offline(monkeypatch):
+    """Verify that explicit --mock mode succeeds offline without GROQ_API_KEY."""
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.setattr("sys.platform", "linux")
+
+    from run_benchmark_evaluation import run_benchmark
+    res = run_benchmark(is_mock=True, specific_models=["openai/gpt-oss-20b"])
+    assert res is not None
+    assert "methods_summary" in res

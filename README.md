@@ -35,15 +35,16 @@ The benchmark evaluates 32 gold-standard observations across four major industri
 
 ---
 
-## 2. Methodology & Deterministic Verification
+## 2. Methodology & Evidence Verification
 
-### Deterministic Unsupported-Value Check
-Unlike pipelines that rely on an LLM as an ungrounded evaluator, this benchmark implements an automated, deterministic verification check (`src/evidence_check.py`):
+### Lexical Evidence Checking
+Unlike pipelines that rely on an LLM as an ungrounded evaluator, this benchmark implements an automated lexical evidence check (`src/evidence_check.py`):
 - Locates the cited PDF page by index.
 - Normalizes numeric representations (handling spaces, comma groupings, European decimals).
-- Checks whether the reported candidate value and associated unit appear in the text across a ±1 page window (adjusted post-hoc to account for report folio-to-index offsets).
+- Checks whether the candidate value string appears in the text across a ±1 page window (adjusted post-hoc to account for report folio-to-index offsets).
+- Explicitly tracks whether an expected unit was matched, missing, or not applicable.
 - Classifies candidate evidence as `supported`, `ambiguous`, or `not_found`.
-- *Note:* Lexical checking verifies string presence on the cited page; it does not constitute semantic validation of metric or temporal attribution.
+- *Methodological Limitation:* Lexical checking verifies string presence on the cited page; it does not constitute semantic validation of reporting year, metric definition, or table column alignment. A value may be present on the cited page (e.g. historical baseline or adjacent safety metric) while being semantically incorrect.
 
 ### Statistical Methodology
 - **Proportion Uncertainty:** 95% Wilson Score confidence intervals for accuracy, coverage, and failure rates.
@@ -94,7 +95,7 @@ $env:GROQ_API_KEY = "your-api-key-here"
 ## 4. Running Tests & Reproducing Experiments
 
 ### Run the Unit & Regression Test Suite
-Runs offline without API calls using deterministic mocks (27 tests):
+Runs offline without API calls using deterministic mocks (31 tests):
 ```bash
 python -m pytest tests/
 ```
@@ -104,16 +105,17 @@ python -m pytest tests/
 # Offline verification mode (zero API calls; writes to results/evaluation_results_mock.json)
 python run_benchmark_evaluation.py --mock
 
-# Live inference mode (writes to results/evaluation_results_latest.json)
+# Live inference mode (Groq API; writes to results/evaluation_results_latest.json)
 python run_benchmark_evaluation.py
+
+# Custom output destination
+python run_benchmark_evaluation.py --output results/my_evaluation.json
 ```
 
-Outputs are automatically written to `results/evaluation_results.json`.
-
 > [!NOTE]
-> **Results Provenance & Overwrite Behavior:** Running the live evaluation pipeline (`run_benchmark_evaluation.py`) overwrites `results/evaluation_results.json`. To prevent losing previous experiment outputs, back up or copy existing files before re-running. The summary tables in Section 5 are computed from:
-> - `results/evaluation_results_recovered.json`: Feeds Table 2 (the recovered run with extended token headroom).
+> **Output Paths & Artifact Preservation:** To protect published findings from accidental modification, running the pipeline never touches the immutable reference results. By default, mock runs write to `results/evaluation_results_mock.json` and live runs write to `results/evaluation_results_latest.json` (or a custom `--output` path). The reference tables in Section 5 are computed from immutable artifacts:
 > - `results/evaluation_results_original_run.json`: Feeds Table 1 (the unmodified initial run).
+> - `results/evaluation_results_recovered.json`: Feeds Table 2 (the recovered run with extended token headroom).
 
 ---
 
@@ -149,7 +151,7 @@ A **Self-Audit** ([`audit_report.md`](audit_report.md)) verified all 32 gold-sta
 - **Observed Accuracy Between Architectures:** Both Direct Prompting and retrieval-augmented extraction (RAG) using `gpt-oss-120b` achieved the same observed accuracy on this benchmark: **26/32 (81.25%)** (95% Wilson CI: [64.7%, 91.1%]). The paired bootstrap confidence interval for their accuracy difference included zero (B = 1,000 iterations, seed 42, Δ = 0.0 pp, 95% CI: −15.6 to +15.6 pp); this small experiment did not establish a clear difference between the methods.
 - **Coverage vs. Autonomous Navigation:** Direct prompting on pre-sliced chapter text achieved 96.9% coverage (31/32) without retrieval misses. RAG operated autonomously over the entire 761-page corpus without chapter hints, achieving 87.5% coverage (28/32).
 - **Non-Comparability of Evidence & Page Metrics Across Methods:** Direct prompting (Method B) was provided pre-sliced 3-page windows (`gold-1` to `gold+1`), and the evidence checker accepts a ±1 page window. As a result, Method B citations within its slice are inherently accepted (100% page accuracy, 3.1–6.5% unsupported rate). These figures cannot be meaningfully compared to Method C (RAG), which had to identify and retrieve pages across the full 761-page corpus.
-- **Disclosed-Only Performance (N = 31):** Alleima discloses renewable energy in MWh (`180,224` MWh of `1,016,096` MWh) but does not print a percentage share. Both Direct 120B and RAG 120B correctly abstained (`null`). On disclosed non-financial KPIs (N = 31), both models achieve identical value accuracy: **26/31 (83.9%)**.
+- **Disclosed-Only Performance (N = 31):** Alleima discloses renewable energy in MWh (`180,224` MWh of `1,016,096` MWh) but does not print a percentage share. Direct 120B predicted `98%` (purchased fossil-free electricity, representing a metric-definition mismatch), while RAG 120B correctly abstained (`null`) on the unprinted derived percentage. On disclosed non-financial KPIs (N = 31), both models achieve identical value accuracy: **26/31 (83.9%)**.
 - **Error Taxonomy:** Direct-120B made exactly 6 errors on 32 observations (3 base-year confusion, 2 metric-definition mismatches, and 1 abstention on a disclosed value). Across both Direct-120B and RAG-120B, values were grounded in the report text rather than arbitrarily fabricated:
   1. *Base-Year vs. Reporting-Year Confusion (Largest single category, 50% of Direct-120B errors):* Multi-year comparative tables caused models to select historical baseline figures:
      - Boliden Scope 1: extracted 2021 baseline `649,087` instead of 2025 `685,577` (Direct-120B).
@@ -173,7 +175,7 @@ To maintain complete research transparency, the following changes were made afte
 1. **Evidence Checker Adjustment:** The initial checker flagged an 84% unsupported rate for Method B due to printed-page to PDF-index offsets (+1 page in Boliden and Alleima) and multi-page tables. The checker was adjusted post-hoc to evaluate a ±1 page window and resolve printed folios. Because Method B received pre-sliced 3-page windows, this relaxed checker accepts nearly all citations within the slice; hence, page accuracy and unsupported rates are not cross-method comparable.
 2. **Targeted Re-Run of Rate-Limited Calls:** The initial live run suffered 15 empty completions on Method C caused by Groq API developer-tier daily token limits (429 TPD) combined with reasoning tokens (150–860 tokens). A targeted re-run with `max_tokens=4096` and polite delays recovered 9 calls (5 for 20B, 4 for 120B) before hitting daily quota. Both the initial run and the recovered run are preserved and reported side-by-side.
 3. **Status of Remaining Failed Calls:** 6 calls remain unrecovered (5 for RAG-20B, 1 for RAG-120B). With Direct 120B and RAG 120B tied at 26/32 (81.25%), resolving the single remaining 120B call would yield at most 27/32 (84.4%), which is well within the 95% bootstrap confidence interval.
-4. **Gold Set Grounding & Target Coarseness Dispositions:** Direct PDF inspection established that Alleima's 17.7% renewable energy share was derived by the annotator from raw MWh figures (`180,224 / 1,016,096`) and is not printed in the report. Models that abstained (`null`) were correctly adhering to prompt instructions. Results are reported for both full ($N=32$) and disclosed-only ($N=31$) sets. Additionally, target labels (net-zero year 2050, SBTi validated) are coarse categorical classifications; across the four companies they represent differing operational scopes (e.g., Boliden covers Scope 1–2 under ICMM, near-term SBTi validated, while Sandvik, Epiroc, and Alleima have verified full value-chain targets).
+4. **Gold Set Grounding & Target Coarseness Dispositions:** Direct PDF inspection established that Alleima's 17.7% renewable energy share was derived by the annotator from raw MWh figures (`180,224 / 1,016,096`) and is not printed in the report. Direct 120B predicted `98%` (purchased fossil-free electricity, representing a metric-definition mismatch), while RAG 120B correctly abstained (`null`) adhering to extraction instructions on unprinted metrics. Results are reported for both full ($N=32$) and disclosed-only ($N=31$) sets. Additionally, target labels (net-zero year 2050, SBTi validated) are coarse categorical classifications; across the four companies they represent differing operational scopes (e.g., Boliden covers Scope 1–2 under ICMM, near-term SBTi validated, while Sandvik, Epiroc, and Alleima have verified full value-chain targets).
 5. **Manifest Regeneration & Line-Ending Normalization:** The cryptographic benchmark manifest (`data/benchmark_manifest.json`) was regenerated after final line-ending normalization and whitespace cleanup, accompanied by a `.gitattributes` configuration (`* text=auto eol=lf`, `data/** -text`, `*.json -text`) to guarantee byte-level SHA-256 integrity across Windows and Unix platforms.
 
 ---

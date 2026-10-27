@@ -102,8 +102,11 @@ def run_benchmark(
             live_client = get_groq_client()
             print("  [OK] Groq API client initialized successfully.")
         except Exception as e:
-            print(f"  [WARN] Groq API client unavailable ({e}). Falling back to mock runner.")
-            is_mock = True
+            raise RuntimeError(
+                f"Live Groq API client initialization failed: {e}. "
+                "Ensure GROQ_API_KEY is set in your environment. "
+                "To execute offline verification without API calls, pass --mock explicitly."
+            ) from e
 
     client_wrapper = ClientWrapper(is_mock=is_mock, live_client=live_client, gold_annotations=gold_annotations)
 

@@ -46,7 +46,7 @@ To resolve prior conflicting statements and eliminate reliance on self-referenti
     Total energy consumption: 1,016,096
   ```
   - **Finding:** **Alleima does not disclose a percentage share for renewable energy or electricity.** The gold value of `17.7%` was manually calculated by the annotator ($\frac{180,224}{1,016,096} = 17.737\%$).
-  - **Non-Disclosure Scoring:** Models returning `null` (such as Direct 120B and RAG 120B) were correctly abstaining under Rule 1 of the prompt.
+  - **Non-Disclosure Scoring:** Direct 120B predicted `98%` (purchased fossil-free electricity, representing a metric-definition mismatch), while RAG 120B correctly abstained (`null`) under Rule 1 of the prompt because no percentage is printed in the report.
 
 ### 3. Epiroc Scope 2 (PDF Index 105, Printed Page 105)
 - **Verbatim Text on Page 105 (Table E1-6):**
@@ -104,11 +104,11 @@ Because Alleima does not disclose a percentage for renewable electricity share, 
 | :--- | :---: | :---: | :---: | :--- |
 | **Method A: Rule-Based Baseline** | 9/32 (28.1%) | 9/31 (29.0%) | [16.1%, 46.6%] | Abstained (`null`) |
 | **Method B: Direct (`gpt-oss-20b`)** | 24/32 (75.0%) | 24/31 (77.4%) | [60.2%, 88.6%] | Extracted `98%` (purchased electricity) |
-| **Method B: Direct (`gpt-oss-120b`)** | 26/32 (81.2%) | 26/31 (83.9%) | [67.4%, 92.9%] | Correctly Abstained (`null`) |
+| **Method B: Direct (`gpt-oss-120b`)** | 26/32 (81.2%) | 26/31 (83.9%) | [67.4%, 92.9%] | Extracted `98%` (purchased electricity) |
 | **Method C: RAG (`gpt-oss-20b` Rec.)** | 21/32 (65.6%) | 21/31 (67.7%) | [50.1%, 81.4%] | Correctly Abstained (`null`) |
 | **Method C: RAG (`gpt-oss-120b` Rec.)** | 26/32 (81.2%) | 26/31 (83.9%) | [67.4%, 92.9%] | Correctly Abstained (`null`) |
 
-On disclosed non-financial KPIs ($N=31$), **Direct 120B and RAG 120B achieve identical value accuracy: 26/31 (83.9%)**.
+On disclosed non-financial KPIs ($N=31$), **Direct 120B and RAG 120B achieve identical value accuracy: 26/31 (83.9%)** (Direct 120B achieves 26/31 by excluding its 98% prediction error on Alleima, while RAG 120B achieves 26/31 by excluding its abstention on the unprinted metric).
 
 ---
 

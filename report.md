@@ -27,7 +27,7 @@
 | **2. Model Cost Calculation** | `scripts/run_phase4_statistical_analysis.py` (`compute_token_cost`, `RATES`) | Rates: 20B ($0.075 / $0.300 per 1M tokens), 120B ($0.150 / $0.600 per 1M tokens). | Integrated exact token rate card into `src/inference.py`; added cost-per-correctly-extracted-KPI metric. | Reused & Extended |
 | **3. Paired Bootstrap & Wilson CI** | `scripts/run_phase4_statistical_analysis.py` (`wilson_score_ci`, `run_bootstrap_analysis`) | Wilson score interval formula for binomial proportions; bootstrap percentile intervals for paired differences. | Adopted `wilson_score_ci` in `src/evaluation.py` for accuracy, coverage, and unsupported-value rates; adapted paired bootstrap (1,000 iterations, seed 42) to calculate paired delta accuracy across identical company-KPI observations. | Reused & Extended |
 | **4. Hashing & Manifest Pattern** | `scripts/test_phase4_regression.py` (`compute_sha256`) & `generate_public_manifest.py` | SHA-256 byte stream hashing; manifest with artifact inventory and SHA-256 table. | Implemented `src/manifest.py` creating `data/benchmark_manifest.json` freezing all gold annotations, source metadata, and configs prior to evaluation. | Reused & Extended |
-| **5. Regression-Test Setup** | `scripts/test_phase4_regression.py` (`run_tests`) | Assertions checking input hashes, exact denominators, metric values, and exit code 0. | Built `tests/test_regression.py` and `tests/test_audit_invariants.py` with 27 unit and invariant tests passing cleanly in `pytest`. | Reused & Extended |
+| **5. Regression-Test Setup** | `scripts/test_phase4_regression.py` (`run_tests`) | Assertions checking input hashes, exact denominators, metric values, and exit code 0. | Built `tests/test_regression.py` and `tests/test_audit_invariants.py` with 31 unit and invariant tests passing cleanly in `pytest`. | Reused & Extended |
 
 ---
 
@@ -38,17 +38,17 @@
 - [x] **Gold-Standard Annotations:** Complete (32 observations across 8 KPIs, verified against original PDF pages with exact quotes, page indexes, boundaries, and normalisation rules).
 - [x] **PDF Parser (`src/pdf_parser.py`):** Complete (PyMuPDF-based text and folio extraction, preserving page-level provenance).
 - [x] **Normalisation Engine (`src/normalisation.py`):** Complete (handles comma/space formatting, unit conversions for emissions and energy, tolerance matching).
-- [x] **Deterministic Evidence Checker (`src/evidence_check.py`):** Complete (verifies candidate values and units on cited PDF pages with windowed and folio-aware checking).
+- [x] **Lexical Evidence Checker (`src/evidence_check.py`):** Complete (verifies candidate value strings on cited PDF pages with windowed and folio-aware checking, retaining explicit lexical-only scope).
 - [x] **Lexical Page Retriever (`src/retrieval.py`):** Complete (BM25 lexical scoring for page chunk retrieval).
 - [x] **Extraction Pipeline (`src/extraction.py`):**
   - Method A (Rule-based baseline): Complete.
   - Method B (Direct LLM extraction): Complete.
   - Method C (Retrieval-augmented extraction - RAG): Complete.
 - [x] **Evaluation Module (`src/evaluation.py`):** Complete (accuracy, page accuracy with folio tolerance, coverage, unsupported-value rate, cost, latency, Wilson CIs, paired bootstrap).
-- [x] **Unit & Regression Test Suite (`tests/`):** Complete (27 tests passed cleanly in pytest).
+- [x] **Unit & Regression Test Suite (`tests/`):** Complete (31 tests passed cleanly in pytest).
 - [x] **Benchmark Freezing Manifest (`src/manifest.py`):** Complete (`data/benchmark_manifest.json` created and cryptographically verified).
 - [x] **Master Evaluation Pipeline (`run_benchmark_evaluation.py`):** Complete (live experiments completed).
-- [x] **Benchmark Self-Audit (`audit_report.md`):** Complete (forensic audit of metrics, folio alignment, API quota failures, and direct PDF spot-checks).
+- [x] **Benchmark Self-Audit (`audit_report.md`):** Complete (audit of metrics, folio alignment, API quota failures, and direct PDF spot-checks).
 
 ---
 
@@ -130,7 +130,7 @@ Both the original evaluation run (with initial Groq rate-limit technical failure
 All tests run in sandbox without requiring network or paid API calls using deterministic mocks:
 - **Test Command:**
   `python -m pytest tests/`
-- **Results:** `27 passed in 2.25s` (100% pass rate).
+- **Results:** `31 passed in 6.57s` (100% pass rate).
 - **Test Coverage Breakdown:**
   1. `test_audit_invariants.py`: 7 tests (exact denominators, alignment, unrounded costs, Wilson CI bounds, semantic limits of lexical matching, derived annotations, recovered run invariants).
   2. `test_evidence_check.py`: 4 tests (numeric variant generation, exact match, spaced match, ambiguous small numbers).
@@ -160,7 +160,7 @@ python run_benchmark_evaluation.py --mock
 python run_benchmark_evaluation.py
 ```
 
-All evaluation runs write their results to `results/evaluation_results.json`.
+Mock runs write to `results/evaluation_results_mock.json` and live runs write to `results/evaluation_results_latest.json`, leaving published reference artifacts unmodified.
 
 ---
 
@@ -173,7 +173,7 @@ All evaluation runs write their results to `results/evaluation_results.json`.
    - **Metric-Definition and Scope Mismatches:** Extraction of related but narrower energy scopes: Epiroc renewable electricity share extracted as `55%` instead of total renewable energy mix `36%` (Direct-120B); Alleima purchased fossil-free electricity extracted as `98%` instead of total renewable share (Direct-120B, Direct-20B).
    - **Metric Sub-Type Mix-ups:** Extraction of related sub-metrics rather than the target KPI: Sandvik safety extracted as LTIFR `0.9` instead of TRIFR `2.3` (RAG-120B).
    - **Abstained on a Disclosed Value:** Model returned `null` despite explicit disclosure in the report text: Sandvik renewable share returned `null` despite `14.9%` being printed on page 71 (Direct-120B, RAG-120B).
-   - **Derived vs. Disclosed Values:** Alleima reports renewable energy in MWh (`180,224` MWh of `1,016,096` MWh) but does not print a percentage share. Direct extraction models properly abstained (`null`) rather than calculating unprinted percentages. On disclosed non-financial KPIs ($N=31$), Direct 120B and RAG 120B achieve identical value accuracy: 26/31 (83.9%).
+   - **Derived vs. Disclosed Values:** Alleima reports renewable energy in MWh (`180,224` MWh of `1,016,096` MWh) but does not print a percentage share. Direct 120B predicted `98%` (purchased fossil-free electricity, representing a metric-definition mismatch), while RAG 120B correctly abstained (`null`) adhering to extraction instructions on unprinted metrics. On disclosed non-financial KPIs ($N=31$), Direct 120B and RAG 120B achieve identical value accuracy: 26/31 (83.9%).
    - **Coarseness of Target Labels:** All four peers are labelled with net-zero target year `2050` and SBTi status `validated` as categorical KPIs, but these are not strictly like-for-like: Boliden's 2050 target covers Scope 1–2 only under ICMM (with near-term 2030 targets SBTi-validated, while long-term net-zero is not yet validated under SBTi Corporate Net-Zero Standard), whereas Sandvik's target is a corporate commitment validated in 2023, and Epiroc and Alleima maintain verified full value-chain targets.
 3. **Non-Comparability of Unsupported-Value and Page Metrics:** Method B received pre-sliced 3-page windows (`gold-1` to `gold+1`), and the evidence checker accepts a ±1 page window. Method B's 100% page accuracy and low unsupported rate reflect this pre-slicing window rather than autonomous document navigation, and cannot be compared directly with Method C's whole-document retrieval.
 4. **API Token Limits on Open-Weight Reasoning Models:** Models like `gpt-oss-120b` produce 150–860 reasoning tokens before generating JSON output. Running sequential calls with large context windows can exhaust daily token limits on developer tiers.
@@ -185,7 +185,7 @@ All evaluation runs write their results to `results/evaluation_results.json`.
 ### Can this project be included on the CV for Thursday night?
 **YES, UNDER A DEFENSIBLE, EMPIRICALLY GROUNDED FRAMING.**
 
-The project satisfies all benchmark requirements: 4 official corporate reports, SHA-256 frozen inputs, 3 extraction paradigms, 2 open-weight models evaluated live on Groq, and 27 automated tests passing cleanly in pytest.
+The project satisfies all benchmark requirements: 4 official corporate reports, SHA-256 frozen inputs, 3 extraction paradigms, 2 open-weight models evaluated live on Groq, and 31 automated tests passing cleanly in pytest.
 
 ### Recommended Defensible CV Bullet Points:
 
