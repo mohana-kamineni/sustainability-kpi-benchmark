@@ -1,0 +1,63 @@
+{
+  "manifest_name": "sustainability_reports_source_manifest",
+  "version": "1.0.0",
+  "retrieval_date": "2026-10-25",
+  "reports": [
+    {
+      "company": "Sandvik",
+      "reporting_year": 2025,
+      "report_id": "sandvik_2025",
+      "report_title": "Sandvik Annual Report 2025",
+      "publication_date": "2026-03-12",
+      "official_source_url": "https://www.annualreport.sandvik/en/2025/_assets/downloads/entire-en-svk-ar25.pdf",
+      "local_filename": "sandvik_annual_report_2025.pdf",
+      "total_pdf_pages": 180,
+      "relevant_page_ranges": "14-15 (Executive strategy/KPI summary), 65-73 (ESRS E1 Climate & Energy statements), 89-91 (ESRS S1 Health & Safety)",
+      "content_format": "Native digital PDF with searchable text, high-density structured financial and non-financial data tables, and embedded graphics",
+      "reporting_framework": "CSRD / European Sustainability Reporting Standards (ESRS), GHG Protocol",
+      "additional_sources_used": null
+    },
+    {
+      "company": "Epiroc",
+      "reporting_year": 2025,
+      "report_id": "epiroc_2025",
+      "report_title": "Epiroc Annual and Sustainability Report 2025",
+      "publication_date": "2026-03-18",
+      "official_source_url": "https://reports.epirocgroup.com/media/ld4los1m/annual-and-sustainability-report-2025.pdf",
+      "local_filename": "epiroc_annual_and_sustainability_report_2025.pdf",
+      "total_pdf_pages": 241,
+      "relevant_page_ranges": "17 (2030 goals & TRIFR), 40-43 (Sustainability governance & goals), 96-108 (ESRS E1 Climate & Energy statement), 127-128 (ESRS S1 Health & Safety)",
+      "content_format": "Native digital PDF with searchable text, detailed multi-column metric tables, and embedded infographics",
+      "reporting_framework": "CSRD / ESRS, GHG Protocol, SBTi validated",
+      "additional_sources_used": null
+    },
+    {
+      "company": "Alleima",
+      "reporting_year": 2025,
+      "report_id": "alleima_2025",
+      "report_title": "Alleima Annual Report 2025",
+      "publication_date": "2026-03-23",
+      "official_source_url": "https://www.alleima.com/siteassets/documents/ir/2025-ar/alleima-annual-report-2025.pdf",
+      "local_filename": "alleima_annual_report_2025.pdf",
+      "total_pdf_pages": 144,
+      "relevant_page_ranges": "15 (Sustainability highlights & targets), 108-114 (ESRS E1 Climate & Energy Statement), 127-128 (Reporting principles and table summaries)",
+      "content_format": "Native digital PDF with searchable text, structured multi-year comparative tables, and transition plan roadmap",
+      "reporting_framework": "CSRD / ESRS, GHG Protocol, SBTi verified",
+      "additional_sources_used": null
+    },
+    {
+      "company": "Boliden",
+      "reporting_year": 2025,
+      "report_id": "boliden_2025",
+      "report_title": "Boliden Annual and Sustainability Report 2025",
+      "publication_date": "2026-03-19",
+      "official_source_url": "https://investors.boliden.com/sites/boliden-ir/files/pr/Boliden_AR_2025_ENG_Print.pdf",
+      "local_filename": "boliden_annual_and_sustainability_report_2025.pdf",
+      "total_pdf_pages": 196,
+      "relevant_page_ranges": "14 (Strategic social targets / LTIF), 75-83 (ESRS E1 Climate & Energy Statement, E1-4 targets, E1-5 energy, E1-6 GHG emissions), 108 (Safety performance)",
+      "content_format": "Native digital PDF with searchable text, detailed metallurgical processing tables, and milestone charts",
+      "reporting_framework": "CSRD / ESRS, GHG Protocol, SBTi validated, ICMM standards",
+      "additional_sources_used": null
+    }
+  ]
+}

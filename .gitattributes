@@ -1,0 +1,6 @@
+* text=auto eol=lf
+data/** -text
+config/** -text
+results/** -text
+*.json -text
+*.jsonl -text

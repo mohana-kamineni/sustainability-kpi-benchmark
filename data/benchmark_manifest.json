@@ -1,0 +1,40 @@
+{
+  "title": "Sustainability KPI Extraction Benchmark Frozen Manifest",
+  "version": "1.0.0",
+  "frozen_timestamp": "2026-10-25T18:00:00Z",
+  "corpus_scope": {
+    "companies": [
+      "Sandvik",
+      "Epiroc",
+      "Alleima",
+      "Boliden"
+    ],
+    "reporting_year": 2025,
+    "total_observations": 32,
+    "kpis": [
+      "scope_1_ghg_emissions",
+      "scope_2_ghg_emissions",
+      "scope_3_ghg_emissions",
+      "total_energy_consumption",
+      "renewable_electricity_share",
+      "net_zero_target_year",
+      "sbti_target_status",
+      "occupational_safety_metric"
+    ]
+  },
+  "frozen_artifacts_sha256": {
+    "gold_annotations.json": "b6adf11797b35131c00959b151c4cb2a67801810f2660146808fa1dd5980444c",
+    "gold_annotations.jsonl": "8122a5e5b6c9143e9d177e45d43a1e067d918cde53ad5fb9ae298d59c4943a30",
+    "source_manifest.json": "2d05cce4cc7228e8665aabf893f7fc7b2cebe103b2a0866f1de8848316e39e6c",
+    "benchmark_config.json": "24264f5fd1c5debe1f0ebebcf35b787894a018431b29acb8056749038cc13685"
+  },
+  "models_evaluated": [
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b"
+  ],
+  "methods_evaluated": [
+    "Method A: Rule-based baseline",
+    "Method B: Direct LLM extraction",
+    "Method C: Retrieval-augmented extraction (RAG)"
+  ]
+}

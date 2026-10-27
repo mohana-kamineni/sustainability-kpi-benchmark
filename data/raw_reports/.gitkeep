@@ -1,0 +1,2 @@
+# Raw annual report PDFs are excluded from git versioning per operating guidelines.
+# Use `python scripts/download_reports.py` to retrieve the four official corporate PDFs.

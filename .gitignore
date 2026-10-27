@@ -1,0 +1,33 @@
+# Environments & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+env/
+venv/
+*.cache
+.cache/
+
+# Execution logs
+*.log
+
+# Scratch and temporary exploration scripts
+scratch/
+
+# Internal interview preparation notes
+sandvik_strategic_note.md
+
+# Credentials and secrets
+.env
+.env.*
+*secret*
+*key*
+
+# Raw PDF reports (kept outside git versioning per operating guidelines)
+data/raw_reports/*.pdf
+*.pdf
+
+# Operating system artifacts
+.DS_Store
+Thumbs.db

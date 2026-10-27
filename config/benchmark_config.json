@@ -1,0 +1,41 @@
+{
+  "project_name": "sustainability-kpi-benchmark",
+  "version": "1.0.0",
+  "seed": 42,
+  "inference": {
+    "temperature": 0.0,
+    "max_tokens": 2048,
+    "rpm_delay": 1.5,
+    "max_retries": 3,
+    "initial_backoff": 2.0
+  },
+  "models": {
+    "openai/gpt-oss-20b": {
+      "slug": "openai_gpt-oss-20b",
+      "prompt_rate_per_token": 7.5e-8,
+      "completion_rate_per_token": 3.0e-7,
+      "description": "Small candidate model (20B parameters)"
+    },
+    "openai/gpt-oss-120b": {
+      "slug": "openai_gpt-oss-120b",
+      "prompt_rate_per_token": 1.5e-7,
+      "completion_rate_per_token": 6.0e-7,
+      "description": "Large candidate model (120B parameters)"
+    }
+  },
+  "evaluation": {
+    "numeric_rel_tolerance": 0.02,
+    "bootstrap_iterations": 1000,
+    "confidence_level": 0.95
+  },
+  "kpi_categories": [
+    "scope_1_ghg_emissions",
+    "scope_2_ghg_emissions",
+    "scope_3_ghg_emissions",
+    "total_energy_consumption",
+    "renewable_electricity_share",
+    "net_zero_target_year",
+    "sbti_target_status",
+    "occupational_safety_metric"
+  ]
+}
