@@ -82,12 +82,40 @@ def normalise_kpi_value(
     # 2. SBTi Status
     if "sbti" in kpi:
         s = str(raw_value).strip().lower()
+
+        # Check explicit negation FIRST (e.g. "not validated", "not yet validated", "unvalidated")
+        is_negated = any(re.search(r'\b' + re.escape(w) + r'\b', s) for w in ["not", "unvalidated", "non-validated", "no", "none", "false"])
+
+        # Check target scope distinctions (near-term vs long-term net-zero)
+        has_near_term = any(w in s for w in ["near-term", "near term", "2030"])
+        has_long_term = any(w in s for w in ["long-term", "long term", "net-zero", "net zero", "2050"])
+
+        # Case: "near-term validated, but long-term net-zero not validated"
+        if has_near_term and has_long_term and is_negated:
+            return "near_term_validated", "status"
+
+        # Explicit negation of validation (e.g. "not validated", "not yet validated")
+        if is_negated and any(w in s for w in ["validat", "approv", "verifi", "yet"]):
+            return "not_validated", "status"
+
+        if is_negated and any(w in s for w in ["participat", "join", "member"]):
+            return "not_participating", "status"
+
+        if is_negated:
+            return "not_validated", "status"
+
+        # Scope distinction: near-term only validation
+        if has_near_term and not has_long_term and any(w in s for w in ["validat", "approv", "verifi"]):
+            return "near_term_validated", "status"
+
+        # Positive validation / verification
         if any(w in s for w in ["validat", "approv", "yes", "verified", "true"]):
             return "validated", "status"
-        elif any(w in s for w in ["commit", "pledg"]):
+
+        # Positive commitment
+        if any(w in s for w in ["commit", "pledg"]):
             return "committed", "status"
-        elif any(w in s for w in ["no", "none", "not", "false"]):
-            return "not_participating", "status"
+
         return s, "status"
 
     # 3. Numeric KPIs
@@ -146,8 +174,17 @@ def compare_kpi_values(
     if "sbti" in kpi_name.lower():
         p_str = str(pred_val).strip().lower()
         g_str = str(gold_val).strip().lower()
+
+        # If prediction contains explicit negation of validation, it must NEVER match a validated gold label
+        if any(neg in p_str for neg in ["not_validated", "not validated", "not yet", "unvalidated", "non-validated", "not_participating"]):
+            return "not" in g_str or "unvalidated" in g_str
+
         if "validat" in g_str:
-            return "validat" in p_str or "approv" in p_str or "verifi" in p_str
+            return any(pos in p_str for pos in ["validat", "approv", "verifi"])
+
+        if "commit" in g_str:
+            return "commit" in p_str
+
         return p_str == g_str
 
     # Year

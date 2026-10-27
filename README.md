@@ -101,10 +101,10 @@ python -m pytest tests/
 
 ### Run Full Benchmark Evaluation Pipeline
 ```bash
-# Offline verification mode (zero API calls)
+# Offline verification mode (zero API calls; writes to results/evaluation_results_mock.json)
 python run_benchmark_evaluation.py --mock
 
-# Live inference mode (Groq API candidate models)
+# Live inference mode (writes to results/evaluation_results_latest.json)
 python run_benchmark_evaluation.py
 ```
 
@@ -146,7 +146,7 @@ A **Self-Audit** ([`audit_report.md`](audit_report.md)) verified all 32 gold-sta
 *\*Methodological Caveat on Method B: Method B was provided pre-sliced 3-page windows (`gold-1` to `gold+1`). Because the adjusted evidence checker accepts citations in a ±1 page window, almost any citation within the provided slice is accepted. Method B's 100% page accuracy and low unsupported rate reflect this pre-slicing window rather than autonomous document navigation.*
 
 ### Key Findings
-- **Accuracy Parity Between Architectures:** Direct prompting and retrieval-augmented extraction (RAG) using `gpt-oss-120b` both reached **81.2% value accuracy (26/32)** (95% Wilson CI: [64.7%, 91.1%]). Paired bootstrap resampling (B = 1,000 iterations, seed 42) indicates Δ = 0.0 pp (95% CI: −15.6 to +15.6 pp), meaning any accuracy difference is completely within sampling noise.
+- **Observed Accuracy Between Architectures:** Both Direct Prompting and retrieval-augmented extraction (RAG) using `gpt-oss-120b` achieved the same observed accuracy on this benchmark: **26/32 (81.25%)** (95% Wilson CI: [64.7%, 91.1%]). The paired bootstrap confidence interval for their accuracy difference included zero (B = 1,000 iterations, seed 42, Δ = 0.0 pp, 95% CI: −15.6 to +15.6 pp); this small experiment did not establish a clear difference between the methods.
 - **Coverage vs. Autonomous Navigation:** Direct prompting on pre-sliced chapter text achieved 96.9% coverage (31/32) without retrieval misses. RAG operated autonomously over the entire 761-page corpus without chapter hints, achieving 87.5% coverage (28/32).
 - **Non-Comparability of Evidence & Page Metrics Across Methods:** Direct prompting (Method B) was provided pre-sliced 3-page windows (`gold-1` to `gold+1`), and the evidence checker accepts a ±1 page window. As a result, Method B citations within its slice are inherently accepted (100% page accuracy, 3.1–6.5% unsupported rate). These figures cannot be meaningfully compared to Method C (RAG), which had to identify and retrieve pages across the full 761-page corpus.
 - **Disclosed-Only Performance (N = 31):** Alleima discloses renewable energy in MWh (`180,224` MWh of `1,016,096` MWh) but does not print a percentage share. Both Direct 120B and RAG 120B correctly abstained (`null`). On disclosed non-financial KPIs (N = 31), both models achieve identical value accuracy: **26/31 (83.9%)**.
@@ -183,7 +183,7 @@ To maintain complete research transparency, the following changes were made afte
 **Sustainability KPI Extraction Benchmark | Python, LLMs, RAG, Statistical Evaluation**
 
 - Benchmarked rule-based, direct-LLM and retrieval-augmented extraction of eight sustainability KPIs from four FY2025 industrial reports (761 pages), using a hashed, frozen evaluation set.
-- Evaluated `gpt-oss-20b` and `gpt-oss-120b` on 32 labelled observations: Direct-120B and RAG-120B both reached 81% accuracy (95% CI 65–91%) at about $0.001 per correct KPI, with no difference between them beyond sampling noise.
+- Evaluated `gpt-oss-20b` and `gpt-oss-120b` on 32 labelled observations: Direct-120B and RAG-120B both reached 81% observed accuracy (95% CI 65–91%) at about $0.001 per correct KPI; the paired bootstrap confidence interval for their difference included zero, establishing no clear difference on this sample.
 - Analysed errors, finding base-year vs reporting-year confusion was the largest category, ahead of metric-definition and safety-metric subtype mix-ups.
 
 ---
@@ -221,6 +221,10 @@ sustainability-kpi-benchmark/
 │   ├── evaluation.py
 │   └── manifest.py
 ├── tests/
+│   ├── fixtures/
+│   │   ├── original_unadjusted_run.json
+│   │   ├── table1_recomputed_run.json
+│   │   └── table2_recovered_run.json
 │   ├── test_audit_invariants.py
 │   ├── test_normalisation.py
 │   ├── test_evidence_check.py

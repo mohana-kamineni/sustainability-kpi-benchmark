@@ -72,6 +72,26 @@ def test_normalise_kpi_renewable_share():
 
 
 def test_normalise_kpi_sbti():
+    # Acceptance test: validated, not validated, not yet validated, committed, verified
+    v, u = normalise_kpi_value("sbti_target_status", "validated")
+    assert v == "validated" and u == "status"
+
+    v, u = normalise_kpi_value("sbti_target_status", "verified")
+    assert v == "validated" and u == "status"
+
+    v, u = normalise_kpi_value("sbti_target_status", "committed")
+    assert v == "committed" and u == "status"
+
+    v, u = normalise_kpi_value("sbti_target_status", "not validated")
+    assert v == "not_validated" and u == "status"
+
+    v, u = normalise_kpi_value("sbti_target_status", "not yet validated")
+    assert v == "not_validated" and u == "status"
+
+    # Target scope distinction: near-term vs long-term net-zero
+    v, u = normalise_kpi_value("sbti_target_status", "near-term validated, but long-term net-zero not validated")
+    assert v == "near_term_validated" and u == "status"
+
     v, u = normalise_kpi_value("sbti_target_status", "Targets approved and validated by SBTi")
     assert v == "validated"
     assert u == "status"
@@ -86,9 +106,13 @@ def test_compare_kpi_values():
     assert compare_kpi_values(78000.0, 78326.0, "scope_1_ghg_emissions", rel_tol=0.02)
     assert not compare_kpi_values(70000.0, 78326.0, "scope_1_ghg_emissions", rel_tol=0.02)
 
-    # SBTi status
+    # SBTi status matching and negation safety
     assert compare_kpi_values("validated", "validated", "sbti_target_status")
     assert compare_kpi_values("SBTi approved", "validated", "sbti_target_status")
+    assert compare_kpi_values("verified", "validated", "sbti_target_status")
+    assert not compare_kpi_values("not validated", "validated", "sbti_target_status")
+    assert not compare_kpi_values("not yet validated", "validated", "sbti_target_status")
+    assert not compare_kpi_values("unvalidated", "validated", "sbti_target_status")
 
     # Target year
     assert compare_kpi_values(2050, 2050, "net_zero_target_year")

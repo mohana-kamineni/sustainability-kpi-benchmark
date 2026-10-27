@@ -2,5 +2,6 @@
 data/** -text
 config/** -text
 results/** -text
+tests/fixtures/** -text
 *.json -text
 *.jsonl -text

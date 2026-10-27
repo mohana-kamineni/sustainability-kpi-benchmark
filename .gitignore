@@ -12,6 +12,10 @@ venv/
 # Execution logs
 *.log
 
+# Generated local experiment outputs (preserves published reference artifacts)
+results/evaluation_results_mock.json
+results/evaluation_results_latest.json
+
 # Scratch and temporary exploration scripts
 scratch/
 

@@ -9,8 +9,8 @@ Includes token cost calculation and offline MockInferenceRunner for testing.
 import json
 import os
 import re
+import sys
 import time
-import winreg
 from typing import Any, Dict, List, Optional
 from openai import OpenAI
 
@@ -26,14 +26,15 @@ RATES = {
 def get_groq_client(timeout: float = 60.0) -> OpenAI:
     """Retrieves GROQ_API_KEY from environment or Windows registry."""
     api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
+    if not api_key and sys.platform == "win32":
         try:
+            import winreg
             k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment")
             api_key, _ = winreg.QueryValueEx(k, "GROQ_API_KEY")
         except Exception:
             pass
     if not api_key:
-        raise RuntimeError("GROQ_API_KEY not found in environment or Windows registry.")
+        raise RuntimeError("GROQ_API_KEY not found in environment (or Windows registry).")
     return OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1", timeout=timeout)
 
 

@@ -151,7 +151,7 @@ Analyzing the examined Direct-120B and RAG-120B errors confirms that values were
 ---
 
 ### Table 2: Recovered Run (Targeted Re-Run of Failed Calls)
-*Original run plus targeted re-run of failed calls with `max_tokens=4096` (9 calls recovered: 4 for 120B, 5 for 20B; remaining 6 calls for 20B and 2 for 120B pending quota reset):*
+*Original run plus targeted re-run of failed calls with `max_tokens=4096` (9 calls recovered: 4 for 120B, 5 for 20B; remaining 5 calls for 20B and 1 for 120B unrecovered):*
 
 | Extraction Method & Model | Evaluated $N$ | Extracted $N$ | Tech Failures | Value Accuracy (95% Wilson CI) | Evidence-Page Accuracy* | Coverage | Unsupported Rate* | Published Total Cost | Cost / Correct KPI |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -163,7 +163,7 @@ Analyzing the examined Direct-120B and RAG-120B errors confirms that values were
 
 - **Paired Bootstrap Resampling ($B=1,000$, seed 42):**
   - Direct 120B vs. Rule-Based: Δ = +53.1 pp (95% CI: +37.5 to +71.9 pp). Statistically significant.
-  - Direct 120B vs. RAG 120B (Recovered): Both achieve **26/32 (81.25%)** (Δ = 0.0 pp, 95% CI: −15.6 to +15.6 pp). Differences between Direct and RAG value accuracy are completely within sampling noise.
+  - Direct 120B vs. RAG 120B (Recovered): Both methods achieved the same observed accuracy on this benchmark (26/32, 81.25%). The paired bootstrap confidence interval for their accuracy difference included zero (Δ = 0.0 pp, 95% CI: −15.6 to +15.6 pp); this small experiment did not establish a clear difference between the methods.
 
 ---
 
@@ -172,5 +172,5 @@ Analyzing the examined Direct-120B and RAG-120B errors confirms that values were
 **Sustainability KPI Extraction Benchmark | Python, LLMs, RAG, Statistical Evaluation**
 
 - Benchmarked rule-based, direct-LLM and retrieval-augmented extraction of eight sustainability KPIs from four FY2025 industrial reports (761 pages), using a hashed, frozen evaluation set.
-- Evaluated `gpt-oss-20b` and `gpt-oss-120b` on 32 labelled observations: Direct-120B and RAG-120B both reached 81% accuracy (95% CI 65–91%) at about $0.001 per correct KPI, with no difference between them beyond sampling noise.
+- Evaluated `gpt-oss-20b` and `gpt-oss-120b` on 32 labelled observations: Direct-120B and RAG-120B both reached 81% observed accuracy (95% CI 65–91%) at about $0.001 per correct KPI; the paired bootstrap confidence interval for their difference included zero, establishing no clear difference on this sample.
 - Analysed errors, finding base-year vs reporting-year confusion was the largest category, ahead of metric-definition and safety-metric subtype mix-ups.

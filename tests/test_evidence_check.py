@@ -43,3 +43,15 @@ def test_check_evidence_ambiguous():
     page_text = "Section 0 item 0 category 0 note 0 details 0."
     res = check_evidence_on_page(page_text, raw_value=0)
     assert res["status"] == "ambiguous"
+
+
+def test_check_evidence_missing_unit_state():
+    # Number appears without expected unit
+    page_text = "The target value was recorded as 450 in the summary table."
+    res = check_evidence_on_page(page_text, raw_value=450, raw_unit="MWh")
+    assert res["status"] == "supported"
+    assert res["match_found"] is True
+    assert res["lexical_value_present"] is True
+    assert res["unit_found"] is False
+    assert res["unit_status"] == "missing"
+    assert res["semantic_validation"] is False

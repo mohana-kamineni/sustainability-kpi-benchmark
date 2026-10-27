@@ -62,7 +62,11 @@ class ClientWrapper:
             return call_groq_inference(self.live_client, model_id, prompt)
 
 
-def run_benchmark(is_mock: bool = False, specific_models: Optional[List[str]] = None):
+def run_benchmark(
+    is_mock: bool = False,
+    specific_models: Optional[List[str]] = None,
+    output_path: Optional[str] = None
+):
     print("=" * 80)
     print("SUSTAINABILITY KPI EXTRACTION BENCHMARK EVALUATION PIPELINE")
     print("=" * 80)
@@ -282,8 +286,14 @@ def run_benchmark(is_mock: bool = False, specific_models: Optional[List[str]] = 
         "detailed_records": {k: v["records"] for k, v in all_method_results.items()}
     }
 
-    out_file = RESULTS_DIR / "evaluation_results.json"
-    with open(out_file, "w", encoding="utf-8") as f:
+    if output_path:
+        out_file = Path(output_path)
+    elif is_mock:
+        out_file = RESULTS_DIR / "evaluation_results_mock.json"
+    else:
+        out_file = RESULTS_DIR / "evaluation_results_latest.json"
+
+    with open(out_file, "w", encoding="utf-8", newline="\n") as f:
         json.dump(summary_output, f, indent=2, ensure_ascii=False)
 
     print(f"\n[DONE] Saved evaluation results to {out_file}")
@@ -294,6 +304,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Sustainability KPI Extraction Benchmark")
     parser.add_argument("--mock", action="store_true", help="Run offline with deterministic mock inference runner")
     parser.add_argument("--models", nargs="+", default=["openai/gpt-oss-20b", "openai/gpt-oss-120b"], help="Model IDs to evaluate")
+    parser.add_argument("--output", type=str, default=None, help="Explicit output JSON path (defaults to evaluation_results_mock.json or evaluation_results_latest.json)")
     args = parser.parse_args()
 
-    run_benchmark(is_mock=args.mock, specific_models=args.models)
+    run_benchmark(is_mock=args.mock, specific_models=args.models, output_path=args.output)

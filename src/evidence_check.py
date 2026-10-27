@@ -1,7 +1,13 @@
 """
-Deterministic Unsupported-Value Check
+Lexical Evidence Presence Check Module
 Performs rule-based verification of whether an extracted KPI value and unit
 actually appear on the cited PDF page, without relying on an LLM judge.
+
+IMPORTANT METHODOLOGICAL SCOPE:
+This check verifies strictly LEXICAL presence. It does NOT establish semantic attribution,
+correct reporting year, metric definition, or table column alignment. A value may be
+lexically present on the cited page (e.g., historical baseline or adjacent safety metric)
+while being semantically incorrect.
 """
 
 import re
@@ -47,12 +53,18 @@ def check_evidence_on_page(
 ) -> Dict[str, Any]:
     """
     Checks if raw_value (or normalised_value) exists in page_text.
+    Distingushes lexical string presence from semantic attribution.
+
     Returns:
     {
         "status": "supported" | "not_found" | "ambiguous",
         "match_found": bool,
+        "lexical_value_present": bool,
         "matched_substring": str or None,
         "evidence_snippet": str or None,
+        "unit_found": bool or None,
+        "unit_status": "matched" | "missing" | "not_applicable",
+        "semantic_validation": False,
         "reason": str
     }
     """
@@ -60,8 +72,12 @@ def check_evidence_on_page(
         return {
             "status": "not_found",
             "match_found": False,
+            "lexical_value_present": False,
             "matched_substring": None,
             "evidence_snippet": None,
+            "unit_found": None,
+            "unit_status": "not_applicable",
+            "semantic_validation": False,
             "reason": "Missing page text or values to verify"
         }
 
@@ -92,20 +108,31 @@ def check_evidence_on_page(
             break
 
     if not matched_variant:
+        unit_status = "missing" if (raw_unit and str(raw_unit).strip() not in ["", "status", "year"]) else "not_applicable"
         return {
             "status": "not_found",
             "match_found": False,
+            "lexical_value_present": False,
             "matched_substring": None,
             "evidence_snippet": None,
+            "unit_found": False if unit_status == "missing" else None,
+            "unit_status": unit_status,
+            "semantic_validation": False,
             "reason": f"Value variants {candidates[:4]} not found on cited page."
         }
 
-    # Check unit if provided
-    unit_found = False
-    if raw_unit:
+    # Explicit unit verification
+    if raw_unit and str(raw_unit).strip() not in ["", "status", "year"]:
         u_clean = raw_unit.lower().replace("co2eq", "").replace("co2e", "").strip()
         if u_clean and u_clean in snippet.lower():
             unit_found = True
+            unit_status = "matched"
+        else:
+            unit_found = False
+            unit_status = "missing"
+    else:
+        unit_found = None
+        unit_status = "not_applicable"
 
     # Ambiguity check: e.g. very common small number like '0' or '1' with multiple occurrences
     if len(matched_variant) <= 2 and collapsed_page.count(matched_variant) > 3:
@@ -113,13 +140,21 @@ def check_evidence_on_page(
         reason = f"Number '{matched_variant}' appears multiple times on the page; semantic context requires review."
     else:
         status = "supported"
-        reason = f"Value '{matched_variant}' verified on page" + (f" with associated unit '{raw_unit}'." if unit_found else ".")
+        if unit_status == "matched":
+            reason = f"Lexical match '{matched_variant}' verified on page with associated unit '{raw_unit}'."
+        elif unit_status == "missing":
+            reason = f"Lexical match '{matched_variant}' found on page, but expected unit '{raw_unit}' was not located within snippet window."
+        else:
+            reason = f"Lexical match '{matched_variant}' verified on page."
 
     return {
         "status": status,
         "match_found": True,
+        "lexical_value_present": True,
         "matched_substring": matched_variant,
         "evidence_snippet": snippet,
         "unit_found": unit_found,
+        "unit_status": unit_status,
+        "semantic_validation": False,
         "reason": reason
     }

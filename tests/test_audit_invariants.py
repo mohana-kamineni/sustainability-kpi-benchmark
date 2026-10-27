@@ -16,13 +16,26 @@ from src.evidence_check import check_evidence_on_page
 from src.normalisation import normalise_kpi_value
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-RESULTS_PATH = PROJECT_ROOT / "results" / "evaluation_results.json"
+FIXTURES_DIR = PROJECT_ROOT / "tests" / "fixtures"
+TABLE1_FIXTURE_PATH = FIXTURES_DIR / "table1_recomputed_run.json"
+TABLE2_FIXTURE_PATH = FIXTURES_DIR / "table2_recovered_run.json"
 ANNOTATIONS_PATH = PROJECT_ROOT / "data" / "annotations" / "gold_annotations.json"
 
 
 @pytest.fixture(scope="module")
 def audit_data():
-    with open(RESULTS_PATH, "r", encoding="utf-8") as f:
+    """Provides Table 1 (original run with fixed checker) as immutable test fixture."""
+    with open(TABLE1_FIXTURE_PATH, "r", encoding="utf-8") as f:
+        res = json.load(f)
+    with open(ANNOTATIONS_PATH, "r", encoding="utf-8") as f:
+        gold = json.load(f)["annotations"]
+    return res, gold
+
+
+@pytest.fixture(scope="module")
+def recovered_data():
+    """Provides Table 2 (recovered run with fixed checker) as immutable test fixture."""
+    with open(TABLE2_FIXTURE_PATH, "r", encoding="utf-8") as f:
         res = json.load(f)
     with open(ANNOTATIONS_PATH, "r", encoding="utf-8") as f:
         gold = json.load(f)["annotations"]
@@ -91,6 +104,34 @@ def test_recovered_run_invariants():
     assert summary["Method_C_RAG_openai_gpt-oss-120b"]["value_accuracy"] == 0.8125
     assert summary["Method_C_RAG_openai_gpt-oss-120b"]["technical_failure_rate"] == 0.0312
     assert summary["Method_C_RAG_openai_gpt-oss-120b"]["unsupported_value_rate"] == 0.0
+
+
+def test_recovered_exact_numerators_and_denominators(recovered_data):
+    """Verify exact numerators and denominators for recovered run under fixed evidence checker."""
+    res, _ = recovered_data
+    records = res["detailed_records"]
+
+    expected_recovered = {
+        "Method_A_RuleBased": {"val_corr": 9, "page_corr": 5, "extracted": 19, "unsupported": 1, "tech_fail": 0},
+        "Method_B_Direct_openai_gpt-oss-20b": {"val_corr": 24, "page_corr": 32, "extracted": 32, "unsupported": 1, "tech_fail": 0},
+        "Method_B_Direct_openai_gpt-oss-120b": {"val_corr": 26, "page_corr": 31, "extracted": 31, "unsupported": 2, "tech_fail": 0},
+        "Method_C_RAG_openai_gpt-oss-20b": {"val_corr": 21, "page_corr": 21, "extracted": 25, "unsupported": 1, "tech_fail": 5},
+        "Method_C_RAG_openai_gpt-oss-120b": {"val_corr": 26, "page_corr": 27, "extracted": 28, "unsupported": 0, "tech_fail": 1},
+    }
+
+    for method, exp in expected_recovered.items():
+        recs = records[method]
+        val_corr = sum(1 for r in recs if r.get("value_correct") is True)
+        page_corr = sum(1 for r in recs if r.get("page_correct") is True)
+        extracted = sum(1 for r in recs if r.get("pred_raw_value") is not None)
+        unsupported = sum(1 for r in recs if r.get("pred_raw_value") is not None and r.get("evidence_status") == "not_found")
+        tech_fail = sum(1 for r in recs if "failure_reason" in r)
+
+        assert val_corr == exp["val_corr"], f"{method} recovered value correct count mismatch: {val_corr} vs {exp['val_corr']}"
+        assert page_corr == exp["page_corr"], f"{method} recovered page correct count mismatch: {page_corr} vs {exp['page_corr']}"
+        assert extracted == exp["extracted"], f"{method} recovered extracted count mismatch: {extracted} vs {exp['extracted']}"
+        assert unsupported == exp["unsupported"], f"{method} recovered unsupported count mismatch: {unsupported} vs {exp['unsupported']}"
+        assert tech_fail == exp["tech_fail"], f"{method} recovered tech fail count mismatch: {tech_fail} vs {exp['tech_fail']}"
 
 
 def test_unrounded_cost_accounting(audit_data):

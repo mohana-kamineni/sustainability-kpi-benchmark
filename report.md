@@ -118,7 +118,7 @@ Both the original evaluation run (with initial Groq rate-limit technical failure
   *Finding:* Direct LLM extraction decisively outperforms rule-based extraction across industrial reports with non-overlapping confidence intervals.
 - **RAG 120B vs. Direct 120B (Recovered Run):**
   ΔAccuracy = 0.0 pp [95% CI: −15.6 to +15.6 pp].
-  *Finding:* Both Direct Prompting (81.2%) and RAG (81.2%) achieved 26/32 correct value extractions. The accuracy difference is **0.0% and completely within sampling noise** (CI spans zero). Direct prompting achieved slightly higher coverage (96.9% vs 87.5%) without retrieval misses, while RAG operated autonomously over the full 761-page report corpus. Note that unsupported-value rates and page accuracy are not cross-method comparable due to Method B's 3-page pre-sliced input windows and the ±1 checker tolerance.
+  *Finding:* Both Direct Prompting and RAG achieved the same observed accuracy on this benchmark (26/32, 81.25%). The paired bootstrap confidence interval for their accuracy difference included zero (ΔAccuracy = 0.0 pp, 95% CI: −15.6 to +15.6 pp); this small experiment did not establish a clear difference between the methods. Direct prompting achieved slightly higher coverage (96.9% vs 87.5%) without retrieval misses, while RAG operated autonomously over the full 761-page report corpus. Note that unsupported-value rates and page accuracy are not cross-method comparable due to Method B's 3-page pre-sliced input windows and the ±1 checker tolerance.
 - **Model Scaling under RAG (120B vs. 20B Recovered):**
   ΔAccuracy = +15.6 pp [95% CI: 0.0 to +31.2 pp].
   *Finding:* The 120B model demonstrated higher parsing reliability on retrieved text, though the lower bound touches zero, indicating that a larger corporate corpus is required for definitive scaling claims.
@@ -152,11 +152,11 @@ cd sustainability-kpi-benchmark
 # 2. Run the offline test suite (instantaneous, 0 cost)
 python -m pytest tests/
 
-# 3. Run the evaluation in mock mode (verifies pipeline end-to-end)
+# 3. Run the evaluation in mock mode (writes to results/evaluation_results_mock.json)
 python run_benchmark_evaluation.py --mock
 
-# 4. Run the live benchmark evaluation (executes live Groq API inference)
-# Ensure GROQ_API_KEY is present in environment or registry
+# 4. Run the live benchmark evaluation (writes to results/evaluation_results_latest.json)
+# Ensure GROQ_API_KEY is present in environment or Windows registry
 python run_benchmark_evaluation.py
 ```
 
@@ -192,7 +192,7 @@ The project satisfies all benchmark requirements: 4 official corporate reports, 
 **Sustainability KPI Extraction Benchmark | Python, LLMs, RAG, Statistical Evaluation**
 
 - Benchmarked rule-based, direct-LLM and retrieval-augmented extraction of eight sustainability KPIs from four FY2025 industrial reports (761 pages), using a hashed, frozen evaluation set.
-- Evaluated `gpt-oss-20b` and `gpt-oss-120b` on 32 labelled observations: Direct-120B and RAG-120B both reached 81% accuracy (95% CI 65–91%) at about $0.001 per correct KPI, with no difference between them beyond sampling noise.
+- Evaluated `gpt-oss-20b` and `gpt-oss-120b` on 32 labelled observations: Direct-120B and RAG-120B both reached 81% observed accuracy (95% CI 65–91%) at about $0.001 per correct KPI; the paired bootstrap confidence interval for their difference included zero, establishing no clear difference on this sample.
 - Analysed errors, finding base-year vs reporting-year confusion was the largest category, ahead of metric-definition and safety-metric subtype mix-ups.
 
 ---
